@@ -13,7 +13,9 @@
     button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; margin-top: 10px; }
     button:hover { background: #0056b3; }
     #form-section { display: none; }
-    #status { color: green; text-align: center; margin-top: 10px; }
+    #status, #form-status { text-align: center; margin-top: 10px; font-size: 14px; }
+    #status { color: green; }
+    #form-status { color: #007bff; }
   </style>
 </head>
 <body>
@@ -46,42 +48,47 @@
   <p id="form-status"></p>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js"></script>
-<script>
-  // ✅ ضع هنا بيانات Firebase الخاصة بك
+<script type="module">
+  // ✅ استيراد Firebase v9 من CDN
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+  import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+
+  // ✅ إعداد Firebase
   const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT.appspot.com",
-    messagingSenderId: "SENDER_ID",
-    appId: "APP_ID"
+    apiKey: "AIzaSyCei58_3JhvjAMDKFQgHvV4BY7jsqX85mA",
+    authDomain: "peak-694bd.firebaseapp.com",
+    projectId: "peak-694bd",
+    storageBucket: "peak-694bd.firebasestorage.app",
+    messagingSenderId: "26071109649",
+    appId: "1:26071109649:web:20ea3e12e14e9cc820a1b0",
+    measurementId: "G-JC9MLS2N6M"
   };
 
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
 
-  // تفعيل reCAPTCHA
-  window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+  // ✅ تفعيل reCAPTCHA
+  window.recaptchaVerifier = new RecaptchaVerifier('recaptcha-container', {
     size: 'normal'
-  });
+  }, auth);
 
   let userPhone = "";
 
-  function sendOTP() {
+  // ✅ إرسال كود OTP
+  window.sendOTP = function() {
     const phoneNumber = document.getElementById('phoneNumber').value;
-    auth.signInWithPhoneNumber(phoneNumber, window.recaptchaVerifier)
+    signInWithPhoneNumber(auth, phoneNumber, window.recaptchaVerifier)
       .then(confirmationResult => {
         window.confirmationResult = confirmationResult;
-        document.getElementById('status').innerText = 'تم إرسال الكود!';
+        document.getElementById('status').innerText = '✅ تم إرسال الكود!';
       })
       .catch(error => {
-        document.getElementById('status').innerText = 'خطأ: ' + error.message;
+        document.getElementById('status').innerText = '❌ خطأ: ' + error.message;
       });
-  }
+  };
 
-  function verifyOTP() {
+  // ✅ تأكيد الكود
+  window.verifyOTP = function() {
     const code = document.getElementById('otpCode').value;
     window.confirmationResult.confirm(code)
       .then(result => {
@@ -90,24 +97,25 @@
         document.getElementById('form-section').style.display = 'block';
       })
       .catch(error => {
-        document.getElementById('status').innerText = 'رمز غير صحيح!';
+        document.getElementById('status').innerText = '❌ رمز غير صحيح!';
       });
-  }
+  };
 
-  // إرسال البيانات إلى Google Sheets
-  const scriptURL = "https://script.google.com/macros/s/AKfycbwFSiblx38Dm0uQzM4ZteWQe1OUHEDH0sJlBmjjX4OC7HOnbqCE2ZhO0LGqLafGusgF/exec"; // ضع هنا رابط Google Apps Script
+  // ✅ إرسال البيانات إلى Google Sheets
+  const scriptURL = "https://script.google.com/macros/s/AKfycbwFSiblx38Dm0uQzM4ZteWQe1OUHEDH0sJlBmjjX4OC7HOnbqCE2ZhO0LGqLafGusgF/exec";
   const form = document.getElementById('requestForm');
+
   form.addEventListener('submit', e => {
     e.preventDefault();
     const formData = new FormData(form);
     formData.append('phone', userPhone);
     fetch(scriptURL, { method: 'POST', body: formData })
-      .then(response => {
-        document.getElementById('form-status').innerText = 'تم إرسال الطلب بنجاح!';
+      .then(() => {
+        document.getElementById('form-status').innerText = '✅ تم إرسال الطلب بنجاح!';
         form.reset();
       })
-      .catch(error => {
-        document.getElementById('form-status').innerText = 'حدث خطأ أثناء الإرسال.';
+      .catch(() => {
+        document.getElementById('form-status').innerText = '❌ حدث خطأ أثناء الإرسال.';
       });
   });
 </script>
