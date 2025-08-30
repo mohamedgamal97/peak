@@ -13,13 +13,12 @@
     button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; margin-top: 10px; }
     button:hover { background: #0056b3; }
     #form-section { display: none; }
-    #status, #form-status { text-align: center; margin-top: 10px; font-size: 14px; }
-    #status { color: green; }
-    #form-status { color: #007bff; }
+    #status { color: green; text-align: center; margin-top: 10px; }
   </style>
 </head>
 <body>
 
+<!-- ✅ Login Section -->
 <div class="container" id="login-section">
   <h2>تسجيل الدخول برقم الهاتف</h2>
   <input type="text" id="phoneNumber" placeholder="+201234567890">
@@ -30,6 +29,7 @@
   <p id="status"></p>
 </div>
 
+<!-- ✅ Form Section (hidden until login success) -->
 <div class="container" id="form-section">
   <h2>أدخل بيانات طلبك العقاري</h2>
   <form id="requestForm">
@@ -48,12 +48,11 @@
   <p id="form-status"></p>
 </div>
 
-<script type="module">
-  // ✅ استيراد Firebase v9 من CDN
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-  import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-
-  // ✅ إعداد Firebase
+<!-- ✅ Firebase & App Logic -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script>
+  // ✅ Firebase Config
   const firebaseConfig = {
     apiKey: "AIzaSyCei58_3JhvjAMDKFQgHvV4BY7jsqX85mA",
     authDomain: "peak-694bd.firebaseapp.com",
@@ -64,31 +63,29 @@
     measurementId: "G-JC9MLS2N6M"
   };
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
 
-  // ✅ تفعيل reCAPTCHA
-  window.recaptchaVerifier = new RecaptchaVerifier('recaptcha-container', {
+  // ✅ reCAPTCHA
+  window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
     size: 'normal'
-  }, auth);
+  });
 
   let userPhone = "";
 
-  // ✅ إرسال كود OTP
-  window.sendOTP = function() {
+  function sendOTP() {
     const phoneNumber = document.getElementById('phoneNumber').value;
-    signInWithPhoneNumber(auth, phoneNumber, window.recaptchaVerifier)
+    auth.signInWithPhoneNumber(phoneNumber, window.recaptchaVerifier)
       .then(confirmationResult => {
         window.confirmationResult = confirmationResult;
-        document.getElementById('status').innerText = '✅ تم إرسال الكود!';
+        document.getElementById('status').innerText = 'تم إرسال الكود!';
       })
       .catch(error => {
-        document.getElementById('status').innerText = '❌ خطأ: ' + error.message;
+        document.getElementById('status').innerText = 'خطأ: ' + error.message;
       });
-  };
+  }
 
-  // ✅ تأكيد الكود
-  window.verifyOTP = function() {
+  function verifyOTP() {
     const code = document.getElementById('otpCode').value;
     window.confirmationResult.confirm(code)
       .then(result => {
@@ -97,25 +94,24 @@
         document.getElementById('form-section').style.display = 'block';
       })
       .catch(error => {
-        document.getElementById('status').innerText = '❌ رمز غير صحيح!';
+        document.getElementById('status').innerText = 'رمز غير صحيح!';
       });
-  };
+  }
 
-  // ✅ إرسال البيانات إلى Google Sheets
+  // ✅ Send Data to Google Sheets
   const scriptURL = "https://script.google.com/macros/s/AKfycbwFSiblx38Dm0uQzM4ZteWQe1OUHEDH0sJlBmjjX4OC7HOnbqCE2ZhO0LGqLafGusgF/exec";
   const form = document.getElementById('requestForm');
-
   form.addEventListener('submit', e => {
     e.preventDefault();
     const formData = new FormData(form);
     formData.append('phone', userPhone);
     fetch(scriptURL, { method: 'POST', body: formData })
-      .then(() => {
-        document.getElementById('form-status').innerText = '✅ تم إرسال الطلب بنجاح!';
+      .then(response => {
+        document.getElementById('form-status').innerText = 'تم إرسال الطلب بنجاح!';
         form.reset();
       })
-      .catch(() => {
-        document.getElementById('form-status').innerText = '❌ حدث خطأ أثناء الإرسال.';
+      .catch(error => {
+        document.getElementById('form-status').innerText = 'حدث خطأ أثناء الإرسال.';
       });
   });
 </script>
