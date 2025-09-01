@@ -47,6 +47,8 @@
   </form>
   <p id="form-status"></p>
 </div>
+<button type="button" onclick="showMyOrders()">عرض طلباتي</button>
+<div id="orders-list"></div>
 
 <!-- ✅ Firebase & App Logic -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -86,6 +88,32 @@
       });
   }
 
+function showMyOrders() {
+  fetch(`${scriptURL}?phone=${userPhone}`)
+    .then(response => response.json())
+    .then(data => {
+      let list = '<h3>طلباتي:</h3><ul>';
+      if (data.length === 0) {
+        list += '<li>لا توجد طلبات بعد.</li>';
+      } else {
+        data.forEach(order => {
+          list += `<li>
+            <strong>${order.propertyType}</strong> - ${order.location} 
+            (${order.priceMin} - ${order.priceMax}) م²:${order.size} 
+            <br><small>${order.date}</small>
+          </li>`;
+        });
+      }
+      list += '</ul>';
+      document.getElementById('orders-list').innerHTML = list;
+    })
+    .catch(error => {
+      document.getElementById('orders-list').innerText = 'حدث خطأ أثناء جلب البيانات.';
+    });
+}
+
+
+  
   function verifyOTP() {
     const code = document.getElementById('otpCode').value;
     window.confirmationResult.confirm(code)
@@ -100,7 +128,8 @@
   }
 
   // ✅ Send Data to Google Sheets
-  const scriptURL = "https://script.google.com/macros/s/AKfycbwFSiblx38Dm0uQzM4ZteWQe1OUHEDH0sJlBmjjX4OC7HOnbqCE2ZhO0LGqLafGusgF/exec";
+  const scriptURL =  "https://script.google.com/macros/s/AKfycbzG3rjWsDlHk-bpG-nFeeiymUz_tZqNvpT-b3I1wLecaRaryuRCi_lLRkkicu2Vmp6L/exec"
+    //"https://script.google.com/macros/s/AKfycbwFSiblx38Dm0uQzM4ZteWQe1OUHEDH0sJlBmjjX4OC7HOnbqCE2ZhO0LGqLafGusgF/exec";
   const form = document.getElementById('requestForm');
   form.addEventListener('submit', e => {
     e.preventDefault();
@@ -119,4 +148,5 @@
 
 </body>
 </html>
+
 
