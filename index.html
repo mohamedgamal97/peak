@@ -8,12 +8,13 @@
   <style>
     body { font-family: 'Tajawal', sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
     .container { max-width: 400px; margin: 30px auto; padding: 20px; background: #fff; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-    h2 { text-align: center; color: #333; }
+    h2, h3 { text-align: center; color: #333; }
     input, select, textarea { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
     button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; margin-top: 10px; }
     button:hover { background: #0056b3; }
-    #form-section { display: none; }
+    #form-section, #orders-section { display: none; }
     #status { color: green; text-align: center; margin-top: 10px; }
+    #orders-list div { border: 1px solid #ccc; padding: 10px; margin-bottom: 8px; border-radius: 6px; background: #fafafa; }
   </style>
 </head>
 <body>
@@ -29,7 +30,7 @@
   <p id="status"></p>
 </div>
 
-<!-- ✅ Form Section (hidden until login success) -->
+<!-- ✅ Form Section -->
 <div class="container" id="form-section">
   <h2>أدخل بيانات طلبك العقاري</h2>
   <form id="requestForm">
@@ -47,15 +48,19 @@
   </form>
   <p id="form-status"></p>
 </div>
-<button type="button" onclick="showMyOrders()">عرض طلباتي</button>
-<div id="orders-list"></div>
 
-<!-- ✅ Firebase & App Logic -->
+<!-- ✅ Orders Section -->
+<div class="container" id="orders-section">
+  <h3>طلباتي</h3>
+  <button onclick="loadOrders()">عرض طلباتي</button>
+  <div id="orders-list"><p>لا توجد طلبات حتى الآن.</p></div>
+</div>
+
+<!-- ✅ Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 
 <script>
-  // ✅ Firebase Config
   const firebaseConfig = {
     apiKey: "AIzaSyCei58_3JhvjAMDKFQgHvV4BY7jsqX85mA",
     authDomain: "peak-694bd.firebaseapp.com",
@@ -69,12 +74,12 @@
   firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth();
 
-  // ✅ reCAPTCHA
   window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
     size: 'normal'
   });
 
   let userPhone = "";
+  const scriptURL = "YOUR_GOOGLE_SCRIPT_WEB_APP_URL"; // ضع رابط السكربت هنا
 
   function sendOTP() {
     const phoneNumber = document.getElementById('phoneNumber').value;
@@ -88,32 +93,6 @@
       });
   }
 
-function showMyOrders() {
-  fetch(`${scriptURL}?phone=${userPhone}`)
-    .then(response => response.json())
-    .then(data => {
-      let list = '<h3>طلباتي:</h3><ul>';
-      if (data.length === 0) {
-        list += '<li>لا توجد طلبات بعد.</li>';
-      } else {
-        data.forEach(order => {
-          list += `<li>
-            <strong>${order.propertyType}</strong> - ${order.location} 
-            (${order.priceMin} - ${order.priceMax}) م²:${order.size} 
-            <br><small>${order.date}</small>
-          </li>`;
-        });
-      }
-      list += '</ul>';
-      document.getElementById('orders-list').innerHTML = list;
-    })
-    .catch(error => {
-      document.getElementById('orders-list').innerText = 'حدث خطأ أثناء جلب البيانات.';
-    });
-}
-
-
-  
   function verifyOTP() {
     const code = document.getElementById('otpCode').value;
     window.confirmationResult.confirm(code)
@@ -121,15 +100,13 @@ function showMyOrders() {
         userPhone = result.user.phoneNumber;
         document.getElementById('login-section').style.display = 'none';
         document.getElementById('form-section').style.display = 'block';
+        document.getElementById('orders-section').style.display = 'block';
       })
       .catch(error => {
         document.getElementById('status').innerText = 'رمز غير صحيح!';
       });
   }
 
-  // ✅ Send Data to Google Sheets
-  const scriptURL =  "https://script.google.com/macros/s/AKfycbzG3rjWsDlHk-bpG-nFeeiymUz_tZqNvpT-b3I1wLecaRaryuRCi_lLRkkicu2Vmp6L/exec"
-    //"https://script.google.com/macros/s/AKfycbwFSiblx38Dm0uQzM4ZteWQe1OUHEDH0sJlBmjjX4OC7HOnbqCE2ZhO0LGqLafGusgF/exec";
   const form = document.getElementById('requestForm');
   form.addEventListener('submit', e => {
     e.preventDefault();
@@ -144,9 +121,33 @@ function showMyOrders() {
         document.getElementById('form-status').innerText = 'حدث خطأ أثناء الإرسال.';
       });
   });
-</script>
 
+  function loadOrders() {
+    fetch(`${scriptURL}?phone=${encodeURIComponent(userPhone)}`)
+      .then(response => response.json())
+      .then(data => {
+        const listDiv = document.getElementById('orders-list');
+        if (data.length === 0) {
+          listDiv.innerHTML = "<p>لا توجد طلبات مرتبطة بهذا الرقم.</p>";
+        } else {
+          listDiv.innerHTML = "";
+          data.forEach(order => {
+            const div = document.createElement('div');
+            div.innerHTML = `
+              <strong>الموقع:</strong> ${order.location}<br>
+              <strong>النوع:</strong> ${order.propertyType}<br>
+              <strong>السعر:</strong> ${order.priceMin} - ${order.priceMax}<br>
+              <strong>المساحة:</strong> ${order.size} م²<br>
+              <strong>التاريخ:</strong> ${order.date}
+            `;
+            listDiv.appendChild(div);
+          });
+        }
+      })
+      .catch(error => {
+        document.getElementById('orders-list').innerHTML = "<p>حدث خطأ أثناء جلب الطلبات.</p>";
+      });
+  }
+</script>
 </body>
 </html>
-
-
