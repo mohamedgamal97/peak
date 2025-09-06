@@ -53,7 +53,7 @@
 <div class="container" id="orders-section">
   <h3>طلباتي</h3>
   <button onclick="loadOrders()">عرض طلباتي</button>
-  <div id="orders-list"><p>لا توجد طلبات حتى الآن.</p></div>
+  <div id="orders-list"><p>لا توجد طلبات حتى الآن</p></div>
 </div>
 
 <!-- ✅ Firebase -->
@@ -86,7 +86,7 @@
     auth.signInWithPhoneNumber(phoneNumber, window.recaptchaVerifier)
       .then(confirmationResult => {
         window.confirmationResult = confirmationResult;
-        document.getElementById('status').innerText = 'تم إرسال الكود!';
+        document.getElementById('status').innerText = '!تم إرسال الكود';
       })
       .catch(error => {
         document.getElementById('status').innerText = 'خطأ: ' + error.message;
@@ -103,7 +103,7 @@
         document.getElementById('orders-section').style.display = 'block';
       })
       .catch(error => {
-        document.getElementById('status').innerText = 'رمز غير صحيح!';
+        document.getElementById('status').innerText = '!رمز غير صحيح';
       });
   }
 
@@ -114,11 +114,11 @@
     formData.append('phone', userPhone);
     fetch(scriptURL, { method: 'POST', body: formData })
       .then(response => {
-        document.getElementById('form-status').innerText = 'تم إرسال الطلب بنجاح!';
+        document.getElementById('form-status').innerText = '!تم إرسال الطلب بنجاح';
         form.reset();
       })
       .catch(error => {
-        document.getElementById('form-status').innerText = 'حدث خطأ أثناء الإرسال.';
+        document.getElementById('form-status').innerText = '!حدث خطأ أثناء الإرسال';
       });
   });
 
@@ -128,28 +128,29 @@
       .then(data => {
         const listDiv = document.getElementById('orders-list');
         if (data.length === 0) {
-          listDiv.innerHTML = "<p>لا توجد طلبات مرتبطة بهذا الرقم.</p>";
+          listDiv.innerHTML = "<p>لا توجد طلبات مرتبطة بهذا الرقم</p>";
         } else {
           listDiv.innerHTML = "";
           data.forEach(order => {
             const div = document.createElement('div');
             div.innerHTML = `
-              <strong>الموقع:</strong> ${order.location}<br>
-              <strong>النوع:</strong> ${order.propertyType}<br>
-              <strong>السعر:</strong> ${order.priceMin} - ${order.priceMax}<br>
-              <strong>المساحة:</strong> ${order.size} م²<br>
-              <strong>التاريخ:</strong> ${order.date}
+              <strong>:الموقع</strong> ${order.location}<br>
+              <strong>:النوع</strong> ${order.propertyType}<br>
+              <strong>:السعر</strong> ${order.priceMin} - ${order.priceMax}<br>
+              <strong>:المساحة</strong> ${order.size} م²<br>
+              <strong>:التاريخ </strong> ${order.date}
             `;
             listDiv.appendChild(div);
           });
         }
       })
       .catch(error => {
-        document.getElementById('orders-list').innerHTML = "<p>حدث خطأ أثناء جلب الطلبات.</p>";
+        document.getElementById('orders-list').innerHTML = "<p>.حدث خطأ أثناء جلب الطلبات</p>";
       });
   }
 </script>
 </body>
 </html>
+
 
 
